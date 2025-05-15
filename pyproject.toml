@@ -23,6 +23,7 @@ dependencies = [
     "pyjwt<3.0.0,>=2.8.0",
     "redis>=6.1.0",
     "websockets>=13.1",
+    "asyncer>=0.0.8",
 ]
 
 [tool.uv]

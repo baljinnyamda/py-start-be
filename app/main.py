@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 import sentry_sdk
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
@@ -5,9 +7,8 @@ from starlette.middleware.cors import CORSMiddleware
 
 from app.api.main import api_router
 from app.core.config import settings
-from contextlib import asynccontextmanager
 from app.core.redis import get_redis, get_redis_client, pool
-from app.core.ws import ConnectionManager
+from app.core.ws import websocket_conn_man
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -21,7 +22,7 @@ if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: nothing special needed as pool is created at module level
-
+    # await connection_manager.startup()
     yield
     await pool.disconnect()
 
