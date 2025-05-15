@@ -1,5 +1,6 @@
 from collections.abc import Generator
 from typing import Annotated
+import redis.asyncio as redis
 
 import jwt
 from fastapi import Depends, HTTPException, status
@@ -12,6 +13,7 @@ from app.core import security
 from app.core.config import settings
 from app.core.db import engine
 from app.models import TokenPayload, User
+from app.core.redis import get_redis
 
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/login/access-token"
@@ -25,6 +27,7 @@ def get_db() -> Generator[Session, None, None]:
 
 SessionDep = Annotated[Session, Depends(get_db)]
 TokenDep = Annotated[str, Depends(reusable_oauth2)]
+RedisClientDep = Annotated[redis.Redis, Depends(get_redis)]
 
 
 def get_current_user(session: SessionDep, token: TokenDep) -> User:
