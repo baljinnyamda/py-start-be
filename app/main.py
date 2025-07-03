@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import logging
 
 import sentry_sdk
 from fastapi import FastAPI
@@ -7,8 +8,11 @@ from starlette.middleware.cors import CORSMiddleware
 
 from app.api.main import api_router
 from app.core.config import settings
-from app.core.redis import get_redis, get_redis_client, pool
+from app.core.redis import pool
 from app.core.ws import websocket_conn_man
+import asyncio
+
+logger = logging.getLogger(__name__)
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -21,10 +25,20 @@ if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: nothing special needed as pool is created at module level
-    # await connection_manager.startup()
+    # Startup
+    logger.info("Starting Redis listener...")
+    await websocket_conn_man.start_listening()
+
     yield
+
+    # Shutdown
+    logger.info("Shutting down Redis listener...")
+    await websocket_conn_man.stop_listening()
     await pool.disconnect()
+
+    # Close the main Redis pool if needed
+    if hasattr(app.state, "redis_pool"):
+        await app.state.redis_pool.disconnect()
 
 
 app = FastAPI(
